@@ -32,7 +32,7 @@ parent tab). Set the destination inside `map-mini/` first (the `href="#"`).
 <iframe src="https://tools.buitenstate.nl/map-mini/"
         title="Buitenstate zoekerskaart"
         loading="lazy"
-        style="width:400px;max-width:100%;height:600px;border:0;display:block;margin:0 auto;"></iframe>
+        style="width:400px;max-width:100%;height:475px;border:0;display:block;margin:0 auto;"></iframe>
 ```
 
 ## Hosting setup on Netlify (one-time)
