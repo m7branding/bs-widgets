@@ -1,0 +1,4 @@
+# Static hosting for the Buitenstate widgets (no build step).
+[build]
+  publish = "."
+  command = ""

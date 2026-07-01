@@ -1,0 +1,4 @@
+# Allow these pages to be iframed from the Buitenstate website.
+/*
+  X-Frame-Options: ALLOWALL
+  Content-Security-Policy: frame-ancestors https://*.buitenstate.nl https://buitenstate.nl 'self'
