@@ -12,7 +12,7 @@
   .bs-mini-map{ flex:1 1 auto; min-height:0; display:flex; align-items:center;
     justify-content:center; padding:6px 18px; }
   .bs-mini-map svg{ width:100%; height:100%; max-height:100%; display:block; overflow:visible;
-    filter:drop-shadow(0 2px 3px rgba(40,50,20,.16)); }
+    filter:blur(3px) drop-shadow(0 2px 3px rgba(40,50,20,.18)); }
   .bs-mini .prov-group{ cursor:pointer; }
   .bs-mini .prov-group .prov{ fill:var(--idle); stroke:rgba(255,255,255,.85); stroke-width:1.42;
     stroke-linejoin:round; transition:fill .18s ease; }
@@ -28,7 +28,7 @@
     box-shadow:0 0 0 0 rgba(55,214,122,.7); animation:bs-pulse 1.4s infinite; }
   .bs-tip{ position:fixed; z-index:9999; pointer-events:none; opacity:0;
     transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
-    background:#1f2a10; color:#fff; border-radius:12px; padding:10px 14px;
+    background:rgba(31,42,16,.55); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.14); color:#fff; border-radius:12px; padding:10px 14px;
     box-shadow:0 8px 30px rgba(20,30,10,.28); white-space:nowrap; font-size:13px; line-height:1.25; }
   .bs-tip.show{ opacity:1; transform:translateY(0); }
   .bs-tip-row{ display:flex; align-items:center; gap:8px; }
