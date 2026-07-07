@@ -1836,13 +1836,10 @@ async function submitRequest() {
   };
   if (FORM_ID != null) data.form_id = FORM_ID;
 
-  // Actual seeker numbers shown to the user — passed along so the CMS email
-  // can include "X actieve zoekers" for this request.
-  if (state.displayedSeekers != null) {
-    data.seekers_count   = state.displayedSeekers;
-    data.search_radius_km = state.radiusKm;
-    data.province        = state.province;
-  }
+  // Numbers the user actually saw on the last step (result panel): the seeker
+  // count and the radius set with the slider. Sent as numeric values.
+  data.amount_of_seekers_shown = Number(state.displayedSeekers) || 0;
+  data.amount_of_seekers_radius_kilometers = Number(state.radiusKm) || 50;
 
   const cta = document.querySelector('#panel-4 .btn-cta');
   const orig = cta.textContent;
