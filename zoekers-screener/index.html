@@ -1834,22 +1834,25 @@ function resolveEstateOfficeId(office) {
   return cms ? cms.id : null;
 }
 
-// Valid Buitenstate makelaar-page slugs (from the site's sitemap) — used to
-// avoid linking to broker pages that don't exist (404).
-const VALID_MAKELAAR_SLUGS = new Set(['aelmans-rentmeesters-makelaars', 'alderik-vos-makelaardij', 'de-zeeuw-makelaardij', 'euverman-nuyts-berends-naafs', 'klaver-makelaardij', 'klijsen-makelaars-adviseurs', 'kwantes-makelaardij', 'lamberink-makelaars-adviseurs', 'lelieveld-makelaardij', 'makelaardij-sierd-moll', 'makelaardij-twan-poels', 'morskieft-de-twentsche-makelaar', 'reggedael-makelaardij-taxaties', 'rosendaal-makelaars', 'schalk-makelaardij', 'schep-makelaardij', 'van-ekeren-kuiper-makelaardij', 'van-zeeburg-luimes-lebbink-makelaars', 'wilhelm-makelaars']);
+// Valid Buitenstate makelaar pages (from the sitemap), keyed by lowercased
+// slug -> exact (case-sensitive) slug. The pages ARE case-sensitive, so we
+// must use the exact casing (e.g. "Bernheze-makelaars").
+const MAKELAAR_SLUGS = new Map([['adriaan-van-den-heuvel-makelaars-en-adviseurs','Adriaan-van-den-heuvel-makelaars-en-adviseurs'], ['bernheze-makelaars','Bernheze-makelaars'], ['aelmans-rentmeesters-makelaars','aelmans-rentmeesters-makelaars'], ['alderik-vos-makelaardij','alderik-vos-makelaardij'], ['de-zeeuw-makelaardij','de-zeeuw-makelaardij'], ['euverman-nuyts-berends-naafs','euverman-nuyts-berends-naafs'], ['klaver-makelaardij','klaver-makelaardij'], ['klijsen-makelaars-adviseurs','klijsen-makelaars-adviseurs'], ['kwantes-makelaardij','kwantes-makelaardij'], ['lamberink-makelaars-adviseurs','lamberink-makelaars-adviseurs'], ['lelieveld-makelaardij','lelieveld-makelaardij'], ['makelaardij-sierd-moll','makelaardij-sierd-moll'], ['makelaardij-twan-poels','makelaardij-twan-poels'], ['morskieft-de-twentsche-makelaar','morskieft-de-twentsche-makelaar'], ['reggedael-makelaardij-taxaties','reggedael-makelaardij-taxaties'], ['rosendaal-makelaars','rosendaal-makelaars'], ['schalk-makelaardij','schalk-makelaardij'], ['schep-makelaardij','schep-makelaardij'], ['van-ekeren-kuiper-makelaardij','van-ekeren-kuiper-makelaardij'], ['van-zeeburg-luimes-lebbink-makelaars','van-zeeburg-luimes-lebbink-makelaars'], ['wilhelm-makelaars','wilhelm-makelaars']]);
 
 // The broker's page on the Buitenstate website, from the estate-company slug.
-// Only returns a URL when the page actually exists; handles Webflow duplicate
-// slug suffixes (e.g. "rosendaal-makelaars-ee724" -> "rosendaal-makelaars").
+// Case-insensitive match returning the exact page slug; handles Webflow
+// duplicate-slug suffixes (e.g. "rosendaal-makelaars-ee724" -> "rosendaal-makelaars").
 function brokerPageUrl(office) {
   const cms = resolveCmsOffice(office);
-  let slug = cms && cms.estate_company && cms.estate_company.slug;
-  if (!slug) return null;
-  slug = slug.toLowerCase();
-  if (VALID_MAKELAAR_SLUGS.has(slug)) return 'https://www.buitenstate.nl/nvm-makelaars/' + slug;
-  const stripped = slug.replace(/-[0-9a-z]*[0-9][0-9a-z]*$/, '');
-  if (stripped !== slug && VALID_MAKELAAR_SLUGS.has(stripped)) return 'https://www.buitenstate.nl/nvm-makelaars/' + stripped;
-  return null;
+  const raw = cms && cms.estate_company && cms.estate_company.slug;
+  if (!raw) return null;
+  const lc = raw.toLowerCase();
+  let exact = MAKELAAR_SLUGS.get(lc);
+  if (!exact) {
+    const stripped = lc.replace(/-[0-9a-z]*[0-9][0-9a-z]*$/, '');
+    if (stripped !== lc) exact = MAKELAAR_SLUGS.get(stripped);
+  }
+  return exact ? 'https://www.buitenstate.nl/nvm-makelaars/' + exact : null;
 }
 
 async function submitRequest() {
