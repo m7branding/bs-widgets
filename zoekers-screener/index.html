@@ -1774,6 +1774,9 @@ const VALUE_REQUEST_API = 'https://makelaars.buitenstate.nl/api/value-request';
 const COMPANIES_API = 'https://makelaars.buitenstate.nl/api/companies/coordinates';
 // Marks requests as coming from this tool (agreed value).
 const FORM_ID = 'toolv2';
+// Confirmation-email function, served from the same origin as this widget
+// (relative → works on the netlify.app domain now and tools.buitenstate.nl later).
+const CONFIRM_EMAIL_FN = '/.netlify/functions/send-confirmation';
 
 // Cache the CMS office list so we can resolve a matched office → its real id.
 let CMS_OFFICES = null;
@@ -1847,6 +1850,19 @@ async function submitRequest() {
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
+    // Confirmation email to the user (best-effort; must not block the flow).
+    fetch(CONFIRM_EMAIL_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: data.first_name, last_name: data.last_name, email: data.email,
+        phone: data.phone, address: data.address, postal_code: data.postal_code, city: data.city,
+        broker_name: b ? b.name : '',
+        amount_of_seekers_shown: data.amount_of_seekers_shown,
+        amount_of_seekers_radius_kilometers: data.amount_of_seekers_radius_kilometers,
+      }),
+    }).catch(function () {});
+
     document.getElementById('s-broker').textContent = b ? b.name : '';
     document.getElementById('s-email').textContent  = data.email;
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('visible'));
@@ -1876,14 +1892,9 @@ function restart() {
 
 <script>
 (function(){
-  function post(){
-    var h = Math.ceil(document.body.getBoundingClientRect().height);
-    parent.postMessage({ bsWidget:'zoekers-screener', height:h }, '*');
-  }
-  if (window.ResizeObserver) new ResizeObserver(post).observe(document.body);
-  window.addEventListener('load', post);
-  window.addEventListener('resize', post);
-  setTimeout(post, 300); setTimeout(post, 1200);
+  function post(){var h=Math.ceil(document.body.getBoundingClientRect().height);parent.postMessage({bsWidget:'zoekers-screener',height:h},'*');}
+  if(window.ResizeObserver)new ResizeObserver(post).observe(document.body);
+  window.addEventListener('load',post);window.addEventListener('resize',post);setTimeout(post,300);setTimeout(post,1200);
 })();
 </script>
 </body>

@@ -1,0 +1,9 @@
+{
+  "name": "bs-widgets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Buitenstate embeddable widgets + confirmation-email function",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}

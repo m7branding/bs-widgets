@@ -60,3 +60,30 @@ That's it — the widgets are then live at
 `https://tools.buitenstate.nl/zoekers-screener/` and
 `https://tools.buitenstate.nl/map-mini/`, ready for the iframe snippets above.
 Every push to `main` auto-deploys.
+
+## Confirmation email (Netlify Function + SMTP)
+
+After a successful value-request, the widget calls
+`/.netlify/functions/send-confirmation` (same origin) which emails the user a
+Buitenstate-branded confirmation including the seeker count + radius they saw.
+Template: `email/confirmation-template.html`.
+
+Set these **environment variables** in Netlify (Site configuration → Environment
+variables) — from your email provider's SMTP settings (SendGrid, Postmark,
+Mailgun, or any SMTP server):
+
+| Variable | Example |
+|----------|---------|
+| `SMTP_HOST` | `smtp.postmarkapp.com` |
+| `SMTP_PORT` | `587` (or `465` for SSL) |
+| `SMTP_USER` | provider username / API token |
+| `SMTP_PASS` | provider password / API token |
+| `MAIL_FROM` | `Buitenstate <noreply@buitenstate.nl>` |
+
+Notes:
+- The **sending domain** (buitenstate.nl) must be verified at your provider
+  (SPF/DKIM) or mail will be rejected / land in spam.
+- The email send is **best-effort**: if SMTP fails, the user still sees the
+  success screen and the value-request is unaffected.
+- The CMS currently also sends its own email; disable that when you want this
+  one to be the only confirmation.

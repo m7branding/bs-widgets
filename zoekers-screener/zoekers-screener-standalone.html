@@ -1781,6 +1781,9 @@ const VALUE_REQUEST_API = 'https://makelaars.buitenstate.nl/api/value-request';
 const COMPANIES_API = 'https://makelaars.buitenstate.nl/api/companies/coordinates';
 // Marks requests as coming from this tool (agreed value).
 const FORM_ID = 'toolv2';
+// Confirmation-email function, served from the same origin as this widget
+// (relative → works on the netlify.app domain now and tools.buitenstate.nl later).
+const CONFIRM_EMAIL_FN = '/.netlify/functions/send-confirmation';
 
 // Cache the CMS office list so we can resolve a matched office → its real id.
 let CMS_OFFICES = null;
@@ -1853,6 +1856,19 @@ async function submitRequest() {
       body: JSON.stringify({ data }),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    // Confirmation email to the user (best-effort; must not block the flow).
+    fetch(CONFIRM_EMAIL_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: data.first_name, last_name: data.last_name, email: data.email,
+        phone: data.phone, address: data.address, postal_code: data.postal_code, city: data.city,
+        broker_name: b ? b.name : '',
+        amount_of_seekers_shown: data.amount_of_seekers_shown,
+        amount_of_seekers_radius_kilometers: data.amount_of_seekers_radius_kilometers,
+      }),
+    }).catch(function () {});
 
     document.getElementById('s-broker').textContent = b ? b.name : '';
     document.getElementById('s-email').textContent  = data.email;

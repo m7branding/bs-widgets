@@ -1,4 +1,8 @@
-# Static hosting for the Buitenstate widgets (no build step).
+# Static hosting for the Buitenstate widgets + the confirmation-email function.
 [build]
   publish = "."
   command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
