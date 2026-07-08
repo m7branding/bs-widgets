@@ -101,7 +101,7 @@ exports.handler = async (event) => {
 
   try {
     await transporter.sendMail({
-      from: process.env.MAIL_FROM || 'Buitenstate <noreply@buitenstate.nl>',
+      from: process.env.MAIL_FROM || 'Buitenstate <mailings@buitenstate.nl>',
       to,
       subject: 'Jouw zoekersoverzicht — Buitenstate',
       html: render(data),
