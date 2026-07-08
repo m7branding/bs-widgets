@@ -80,6 +80,11 @@ function makeTransport() {
     port: Number(process.env.SMTP_PORT) || 587,
     secure: Number(process.env.SMTP_PORT) === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    // Workaround: mail.buitenstate.nl has an EXPIRED TLS certificate, which
+    // otherwise blocks the STARTTLS connection. This keeps the connection
+    // encrypted but skips certificate validation. Remove this once the mail
+    // server's certificate is renewed. (Overridable via SMTP_TLS_VERIFY=1.)
+    tls: { rejectUnauthorized: process.env.SMTP_TLS_VERIFY === '1' },
   });
 }
 
