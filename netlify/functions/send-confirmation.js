@@ -74,6 +74,15 @@ function render(data) {
   return TEMPLATE.replace(/\{\{(\w+)\}\}/g, (_, k) => esc(view[k]));
 }
 
+function makeTransport() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+}
+
 exports.handler = async (event) => {
   const cors = {
     'Access-Control-Allow-Origin': process.env.ALLOW_ORIGIN || '*',
@@ -81,6 +90,26 @@ exports.handler = async (event) => {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: cors, body: '' };
+
+  // TEMPORARY diagnostic: GET ?diagnose=1 verifies the SMTP connection/auth
+  // WITHOUT sending any email, and reports which env vars are present.
+  const q = event.queryStringParameters || {};
+  if (event.httpMethod === 'GET' && q.diagnose === '1') {
+    const cfg = {
+      SMTP_HOST: process.env.SMTP_HOST || 'MISSING',
+      SMTP_PORT: process.env.SMTP_PORT || 'MISSING',
+      SMTP_USER: process.env.SMTP_USER ? 'set' : 'MISSING',
+      SMTP_PASS: process.env.SMTP_PASS ? 'set' : 'MISSING',
+      MAIL_FROM: process.env.MAIL_FROM || '(default)',
+    };
+    try {
+      await makeTransport().verify();
+      return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true, verified: true, cfg }) };
+    } catch (e) {
+      return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: false, error: String((e && e.message) || e), cfg }) };
+    }
+  }
+
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: cors, body: 'Method not allowed' };
 
   let data;
@@ -92,12 +121,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: cors, body: JSON.stringify({ ok: false, error: 'Invalid email' }) };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  });
+  const transporter = makeTransport();
 
   try {
     await transporter.sendMail({
