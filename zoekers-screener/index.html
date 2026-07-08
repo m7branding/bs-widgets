@@ -17,6 +17,7 @@
 
 /* ── Widget shell ── */
 .widget {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 8px 48px rgba(40,50,20,.14);
@@ -199,7 +200,13 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  text-decoration: none;
+  color: inherit;
+  transition: background .18s ease, border-color .18s ease, transform .12s ease;
 }
+a.broker-card { cursor: pointer; }
+a.broker-card:hover { background: #e6f0d7; border-color: #a9cd7f; transform: translateY(-1px); }
+.broker-card .broker-chevron { margin-left: auto; color: #3c4f19; font-size: 20px; font-weight: 700; flex-shrink: 0; }
 .broker-avatar {
   width: 80px; height: 56px; border-radius: 10px;
   background: #3c4f19;
@@ -667,15 +674,15 @@
         Vraag gratis waardebepaling aan →
       </button>
 
-      <div class="broker-card" id="r-broker-card" style="margin-top:18px;">
+      <a class="broker-card" id="r-broker-card" style="margin-top:18px;">
         <div class="broker-avatar" id="r-b-avatar"></div>
         <div>
           <div class="broker-name" id="r-b-name">–</div>
           <div class="broker-office" id="r-b-office">–</div>
           <div class="broker-loc" id="r-b-loc">–</div>
-          <div class="broker-contact" id="r-b-contact"></div>
         </div>
-      </div>
+        <span class="broker-chevron" id="r-b-chevron" aria-hidden="true" style="display:none;">›</span>
+      </a>
 
       <div class="btn-row">
         <button class="btn btn-back" onclick="goTo(3)">← Terug</button>
@@ -1615,6 +1622,7 @@ async function validateAndGoTo4() {
   const address = document.getElementById('f-address').value.trim();
   state.city = city;
   const geo  = await geocodeAddress(zip, city, address);
+  await loadCmsOffices(); // needed to resolve the broker's Buitenstate page link
 
   btn.disabled = false;
   btn.textContent = 'Zoekers rond mijn adres tonen →';
@@ -1633,7 +1641,7 @@ async function validateAndGoTo4() {
 }
 
 /* ─── BROKER ─── */
-function renderBrokerCard(avatarId, nameId, officeId, locId, contactId) {
+function renderBrokerCard(avatarId, nameId, officeId, locId) {
   const match = state.match;
   const broker = match ? match.broker : BROKERS[0];
   const office = match ? match.office : BROKERS[0].offices[0];
@@ -1649,11 +1657,6 @@ function renderBrokerCard(avatarId, nameId, officeId, locId, contactId) {
   document.getElementById(nameId).textContent   = broker.name;
   document.getElementById(officeId).textContent = 'Vestiging ' + office.city;
   document.getElementById(locId).textContent    = '📍 ' + office.city + (match ? ` · ±${match.distKm} km` : '');
-  const searchers = office.searchers || 0;
-  document.getElementById(contactId).innerHTML  =
-    (searchers ? `<span class="office-searchers">${searchers.toLocaleString('nl-NL')} actieve zoekers</span> · ` : '') +
-    `<a href="tel:${broker.phone}">${broker.phone}</a>` +
-    (broker.website ? ` · <a href="${broker.website}" target="_blank" rel="noopener">Website</a>` : '');
 }
 
 /* ─── TEASER (province-level seekers, shown right after province pick) ─── */
@@ -1747,7 +1750,21 @@ function renderResult() {
   document.getElementById('r-blurb').innerHTML =
     `In jouw regio hebben wij op dit moment <strong>${heroCount.toLocaleString('nl-NL')} actieve zoekers</strong> in de Buitenstate database op zoek naar een landelijke woning ${hasAddr ? 'rond' : 'in'} <strong>${regio}</strong>. Kom in contact met <strong>${b.name}</strong> en ontdek kosteloos wat jouw landelijke woning waard is voor deze mogelijke kopers!`;
 
-  renderBrokerCard('r-b-avatar','r-b-name','r-b-office','r-b-loc','r-b-contact');
+  renderBrokerCard('r-b-avatar','r-b-name','r-b-office','r-b-loc');
+
+  // Make the whole callout link to the broker's page on the Buitenstate site.
+  const card = document.getElementById('r-broker-card');
+  const chevron = document.getElementById('r-b-chevron');
+  const url = state.match ? brokerPageUrl(state.match.office) : null;
+  if (url) {
+    card.setAttribute('href', url);
+    card.setAttribute('target', '_blank');
+    card.setAttribute('rel', 'noopener');
+    if (chevron) chevron.style.display = '';
+  } else {
+    card.removeAttribute('href');
+    if (chevron) chevron.style.display = 'none';
+  }
 
   animateCount(document.getElementById('r-count'), heroCount);
   updateRadius(50);
@@ -1798,10 +1815,9 @@ async function loadCmsOffices() {
 // Kick off the fetch early so it's ready by the time the user submits.
 loadCmsOffices();
 
-// Resolve the CMS estate-office id for a matched office, by nearest coordinates
-// (offices are geographically sparse, so the closest CMS office is the same
-// vestiging), with an exact city-name fallback.
-function resolveEstateOfficeId(office) {
+// Resolve the matching CMS office object for a matched office, by nearest
+// coordinates (offices are geographically sparse), with a city-name fallback.
+function resolveCmsOffice(office) {
   if (!office || !CMS_OFFICES || !CMS_OFFICES.length) return null;
   let best = null, bestDist = Infinity;
   for (const o of CMS_OFFICES) {
@@ -1809,9 +1825,31 @@ function resolveEstateOfficeId(office) {
     const d = haversine(office.lat, office.lon, o.lat, o.lng);
     if (d < bestDist) { bestDist = d; best = o; }
   }
-  if (best && bestDist <= 5) return best.id;
-  const byCity = CMS_OFFICES.find(o => (o.city || '').toLowerCase() === (office.city || '').toLowerCase());
-  return byCity ? byCity.id : (best ? best.id : null);
+  if (best && bestDist <= 5) return best;
+  return CMS_OFFICES.find(o => (o.city || '').toLowerCase() === (office.city || '').toLowerCase()) || best;
+}
+
+function resolveEstateOfficeId(office) {
+  const cms = resolveCmsOffice(office);
+  return cms ? cms.id : null;
+}
+
+// Valid Buitenstate makelaar-page slugs (from the site's sitemap) — used to
+// avoid linking to broker pages that don't exist (404).
+const VALID_MAKELAAR_SLUGS = new Set(['aelmans-rentmeesters-makelaars', 'alderik-vos-makelaardij', 'de-zeeuw-makelaardij', 'euverman-nuyts-berends-naafs', 'klaver-makelaardij', 'klijsen-makelaars-adviseurs', 'kwantes-makelaardij', 'lamberink-makelaars-adviseurs', 'lelieveld-makelaardij', 'makelaardij-sierd-moll', 'makelaardij-twan-poels', 'morskieft-de-twentsche-makelaar', 'reggedael-makelaardij-taxaties', 'rosendaal-makelaars', 'schalk-makelaardij', 'schep-makelaardij', 'van-ekeren-kuiper-makelaardij', 'van-zeeburg-luimes-lebbink-makelaars', 'wilhelm-makelaars']);
+
+// The broker's page on the Buitenstate website, from the estate-company slug.
+// Only returns a URL when the page actually exists; handles Webflow duplicate
+// slug suffixes (e.g. "rosendaal-makelaars-ee724" -> "rosendaal-makelaars").
+function brokerPageUrl(office) {
+  const cms = resolveCmsOffice(office);
+  let slug = cms && cms.estate_company && cms.estate_company.slug;
+  if (!slug) return null;
+  slug = slug.toLowerCase();
+  if (VALID_MAKELAAR_SLUGS.has(slug)) return 'https://www.buitenstate.nl/nvm-makelaars/' + slug;
+  const stripped = slug.replace(/-[0-9a-z]*[0-9][0-9a-z]*$/, '');
+  if (stripped !== slug && VALID_MAKELAAR_SLUGS.has(stripped)) return 'https://www.buitenstate.nl/nvm-makelaars/' + stripped;
+  return null;
 }
 
 async function submitRequest() {
