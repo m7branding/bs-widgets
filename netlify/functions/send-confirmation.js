@@ -14,7 +14,7 @@ const TEMPLATE = `<table role="presentation" width="100%" cellpadding="0" cellsp
   <tr><td align="center">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:560px;max-width:92%;background:#ffffff;border-radius:16px;overflow:hidden;">
       <tr><td style="background:#3c4f19;padding:26px 32px;">
-        <img src="https://buitenstate.netlify.app/email/assets/logo-buitenstate.png" width="56" height="56" alt="Buitenstate Makelaars" style="display:block;border:0;border-radius:6px;">
+        <img src="https://buitenstate.netlify.app/email/assets/logo-buitenstate.png" width="64" height="64" alt="Buitenstate Makelaars" style="display:block;border:0;border-radius:8px;">
       </td></tr>
       <tr><td style="padding:30px 32px 8px;">
         <h1 style="margin:0 0 10px;font-size:21px;color:#1a2510;">Beste {{first_name}},</h1>
